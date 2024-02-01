@@ -1,9 +1,10 @@
 {
     "version": 2,
+    "name": "Zinema",
     "builds": [
       {
         "src": "app.js",
-        "use": "@now/node"
+        "use": "@vercel/node"
       }
     ],
     "routes": [
