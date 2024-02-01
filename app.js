@@ -13,7 +13,7 @@ const baseUrl = '/api/v1/zinema';
 
 database();
 
-app.use(cors)
+app.use(cors())
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(cookieParser());
