@@ -16,7 +16,7 @@ database();
 const corsOptions = {
     origin: process.env.ORIGIN, // specify the allowed origin
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, // enable credentials (cookies, headers)
+    credentials: false, // enable credentials (cookies, headers)
   };
 
 app.use(cors(corsOptions))
@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(`${baseUrl}/auth`, auth);
 
 
-app.use([`${baseUrl}`, '/'], (req, res) => {
+app.use([baseUrl, '/'], (req, res) => {
     res.json({
         'message' : "Welcome to Zinema API"
     })
