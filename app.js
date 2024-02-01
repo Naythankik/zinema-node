@@ -24,6 +24,7 @@ app.get(`${baseUrl}`, (req, res) => {
     res.json({
         'message' : "Welcome to Zinema API"
     })
+    return
 })
 
 
