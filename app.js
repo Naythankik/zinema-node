@@ -13,7 +13,13 @@ const baseUrl = '/api/v1/zinema';
 
 database();
 
-app.use(cors())
+const corsOptions = {
+    origin: process.env.ORIGIN, // specify the allowed origin
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true, // enable credentials (cookies, headers)
+  };
+
+app.use(cors(corsOptions))
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(cookieParser());
