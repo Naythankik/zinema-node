@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(`${baseUrl}/auth`, auth);
 
 
-app.use(['/zinema', '/'], (req, res) => {
+app.use(['/zinema', '/', baseUrl], (req, res) => {
     res.json({
         'message' : "Welcome to Zinema API"
     })
