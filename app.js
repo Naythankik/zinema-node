@@ -4,7 +4,7 @@ require('dotenv').config();
 const cookieParser = require('cookie-parser')
 const { auth } = require('./routes')
 const database = require('./app/config/database')
-conts cors = require('cors')
+const cors = require('cors')
 
 const PORT = process.env.PORT || 3000;
 
