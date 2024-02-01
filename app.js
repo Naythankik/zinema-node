@@ -4,6 +4,7 @@ require('dotenv').config();
 const cookieParser = require('cookie-parser')
 const { auth } = require('./routes')
 const database = require('./app/config/database')
+conts cors = require('cors')
 
 const PORT = process.env.PORT || 3000;
 
@@ -12,6 +13,7 @@ const baseUrl = '/api/v1/zinema';
 
 database();
 
+app.use(cors())
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(cookieParser());
