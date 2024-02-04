@@ -1,6 +1,6 @@
 const Joi = require('joi')
 
-function signUpSchema(data) {
+function signupRequest(data) {
   const schema = Joi.object({
     first_name: Joi.string().min(2).max(16).valid().required(),
     last_name: Joi.string().min(2).max(16).valid().required(),
@@ -13,4 +13,4 @@ function signUpSchema(data) {
   return schema.validate(data);
 }
 
-module.exports = signUpSchema;
+module.exports = signupRequest;

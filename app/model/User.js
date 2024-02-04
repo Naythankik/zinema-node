@@ -40,9 +40,13 @@ const UserModel = new mongoose.Schema(
       enum: ["approved", "pending"],
       default: "pending",
     },
+    refreshToken: {
+      type: String,
+    },
+    passwordChangedAt: Date,
     passwordResetToken: String,
-    forgetPasswordExpires: Date,
-    registrationToken: String,
+    passwordResetExpires: Date,
+    token: String
   },
   { timestamps: true }
 );

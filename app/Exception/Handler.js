@@ -4,17 +4,25 @@ const ModelCollectionExist = async (model, queryObject) => {
     return collection ? true : false;
 }
 
-const successResponse = (data = [], message, status = 200) => {
-    return {
-        data : {
+const successResponse = (res, data = [], message, status = 200) => {
+    return res.status(status).json({
+        data: {
             data,
-            message
+            message,
         },
         status
-    };
+    })
+}
+
+const errorResponse = (res, message, status = 400) => {
+   return res.status(status).json({
+        error : message,
+        status
+    })
 }
 
 module.exports = {
     ModelCollectionExist,
-    successResponse
+    successResponse,
+    errorResponse
 }

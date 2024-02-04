@@ -13,16 +13,18 @@ let configOptions = {
 
 const transporter = nodemailer.createTransport(configOptions)
 
-const main = async (to, subject, text) => {
-    const info = await transporter.sendMail({
+
+const mail = async (to, subject, text, token) => {
+   await transporter.sendMail({
       from: process.env.MAIL_EMAIL,
       to: to, 
       subject: subject, 
       text: text,
+      html : `<a href=${process.env.APP_URL}/auth/verify/${token}}>Verify Account</a>`
     });
   
   }
 
   module.exports = {
-    main
+    mail
   }
