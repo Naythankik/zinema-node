@@ -1,16 +1,17 @@
-const { signuprequest, signinRequest, verificationRequest } = require('../request');
+const { signupRequest, signinRequest, verificationRequest, resetPasswordRequest } = require('../request');
 const User = require('../model/User')
-const { ModelCollectionExist, successResponse, errorResponse } = require('../Exception/Handler')
+const { ModelCollectionExist, successResponseWithData, successResponse, errorResponse } = require('../Exception/Handler')
 const { mail } = require('../config/mailer')
 const { generateToken, verifyToken } = require('../config/jwtToken');
-const signupRequest = require('../request/SignUpRequest');
+const cryptoJS = require('crypto-js')
+const bcrypt = require("bcrypt");
 
 let subject = 'Welcome to Zinema';
 
 
 const createAccount = async (req, res) => {
     const {error, value} = signupRequest(req.body);
-    
+
     if(error){
       return errorResponse(res, error.details[0].message, 422);
     }else if(await ModelCollectionExist(User, {'email': value.email})){
@@ -36,14 +37,14 @@ const createAccount = async (req, res) => {
         user.token = token;
         user.password = user.__v = undefined;
 
-        await mail(newUser.email, 'User Successfully Created', subject, token)
+        await mail(newUser.email, subject, 'User Successfully Created', `${process.env.APP_URL}/auth/verify/${token}}`, 'Verify Account')
       }
     } catch (error) {
       await User.findByIdAndDelete(user.id);
       return errorResponse(res, error.message, error.status);
     }
 
-    return successResponse(res, user, 'Verfication Mail has been sent to email!!!', 201);
+    return successResponseWithData(res, user, 'Verfication Mail has been sent to email!!!', 201);
 };
 
 const login = async (req, res) => {
@@ -100,7 +101,7 @@ const login = async (req, res) => {
 
   updateUser.password = updateUser.token = undefined
 
-  return successResponse(res, updateUser, '');
+  return successResponseWithData(res, updateUser, '');
 };
 
 const verifyAccount = async (req, res) => {
@@ -108,21 +109,24 @@ const verifyAccount = async (req, res) => {
 
   const findToken = await User.findOne({'token': token});
 
-  if(findToken.status !== 'pending'){
-    return errorResponse(res, 'User account is verified already');
-  }
-
-  if(!findToken){
+  if(findToken === null){
     return errorResponse(res, 'Token is invalid, send a new request or check your mail if you sent a requet in the last 10 mins');
   }
 
-  $tokenVerification = verifyToken(res, token);
+  if(findToken?.status !== 'pending'){
+    return errorResponse(res, 'User account is verified already');
+  }
+
+  if (!verifyToken(token)){
+    return errorResponse(res, 'Token has expired, request for a new one');
+  }
 
   findToken.status = 'approved'
+  findToken.token = null;
 
   await findToken.save();
 
-  return successResponse(res, findToken, 'User has been verified successfully!');
+  return successResponseWithData(res, findToken, 'User has been verified successfully!');
 }
 
 const requestVerification = async (req, res) => {
@@ -132,7 +136,7 @@ const requestVerification = async (req, res) => {
     return errorResponse(res, error.details[0].message, 422);
   }
 
-  const user = await User.findOne({'email' : value.email});
+  const user = await User.findOne(value);
 
   if(!user){
     return errorResponse(res, 'User not found');
@@ -142,26 +146,110 @@ const requestVerification = async (req, res) => {
     return errorResponse(res, 'User account is verified already');
   }
 
-  if(user.token){
-    if(verifyToken(res, user.token).userId){
+  if(user.token && verifyToken(res, user.token)){
       return errorResponse(res, 'Token is still active, check your email')
-    }
   }
 
   const newToken = generateToken(user.id, '10m');
 
-  await mail(user.email, 'Email Verification', subject, newToken)
+  await mail(user.email, subject, 'Email Verification', `${process.env.APP_URL}/auth/verify/${newToken}}`, 'Verify Account')
 
   user.token = newToken;
 
   await user.save();
 
-  return successResponse(res, [], 'A new email verification has been sent to your email');
+  return successResponse(res,'A new email verification has been sent to your email');
+}
+
+const forgetPassword = async (req, res) => {
+  const {error, value} = verificationRequest(req.body);
+
+  if(error){
+    return errorResponse(res, error.details[0].message, 422);
+  }
+
+    const user = await User.findOne(value);
+
+    if(!user){
+      return errorResponse(res, 'User not found');
+    }
+
+    if(user.passwordResetToken){
+      if((user.passwordResetExpires - Date.now()) > 0){
+        return errorResponse(res, 'Password reset link still active')
+      }
+    }
+
+    const token = cryptoJS.AES.encrypt(user.email, process.env.JWT_SECRET).toString().replaceAll('/', 'zi');
+
+    await User.findByIdAndUpdate(user.id, {
+      $set: {
+        passwordResetToken : token,
+        passwordResetExpires: Date.now() + (1000 * 60 *10)
+        },
+    });
+
+    subject = 'Forget Password'
+
+    const text = `A mail has been sent to you <br> <a href=${process.env.APP_URL}/auth/reset-password/${token}}>Reset Password</a>`
+
+
+    await mail(user.email, subject, text, `${process.env.APP_URL}/auth/reset-password/${token}}`, 'Reset Password');
+
+
+    return successResponse(res,'Verification Mail has been sent to email!!!', 201);
+}
+
+const resetPassword = async (req, res) => {
+  const { error, value } = resetPasswordRequest(req.body);
+
+  if(error){
+    return errorResponse(res, error.details[0].message);
+  }
+
+  const { token } = req.params;
+
+  let decryptToken = cryptoJS.AES.decrypt(token.replaceAll('zi', '/'), process.env.JWT_SECRET).toString(cryptoJS.enc.Utf8);
+
+  if(decryptToken.length === 0){
+    return errorResponse(res, 'Token is invalid');
+  }
+
+  const user = await User.findOne({ passwordResetToken : token});
+
+  if(!user){
+    return errorResponse(res, 'User not found');
+  }
+
+  if(decryptToken !== user.email){
+    return errorResponse(res, 'Token is invalid for the user', 442);
+  }
+
+  const salt = await bcrypt.genSalt(10);
+
+  await User.findByIdAndUpdate(user.id, {
+    $set: {
+      passwordResetToken : null,
+      passwordResetExpires : null,
+      passwordChangedAt: Date.now(),
+      password : await bcrypt.hash(value.password, salt)
+    },
+  });
+
+  subject = 'Reset Password'
+
+  const text = `Password has been reset successfully`
+
+  await mail(user.email, subject, text, '#', 'Reset Password');
+
+  return successResponse(res,'Password has been reset successfully!!!', 201);
 }
 
 module.exports = {
   createAccount,
   login,
   requestVerification,
-  verifyAccount
+  verifyAccount,
+  forgetPassword,
+  resetPassword
 };
