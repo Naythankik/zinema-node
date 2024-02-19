@@ -8,7 +8,6 @@ const bcrypt = require("bcrypt");
 
 let subject = 'Welcome to Zinema';
 
-
 const createAccount = async (req, res) => {
     const {error, value} = signupRequest(req.body);
 
@@ -79,7 +78,7 @@ const login = async (req, res) => {
       /**if the new user is different from the currently login user */
       if (decodedToken.userId !== user._id) {
         // update the current login user isActive status to false
-        const usersa = await User.findByIdAndUpdate(decodedToken.userId, {
+        await User.findByIdAndUpdate(decodedToken.userId, {
           $set: {
             isActive: false,
           },

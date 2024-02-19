@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser')
 const { auth } = require('./routes')
 const database = require('./app/config/database')
 const cors = require('cors')
+const User = require('./app/model/User');
 
 const PORT = process.env.PORT || 3000;
 
@@ -22,11 +23,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use(`${baseUrl}/auth`, auth);
 
 
+app.get(`${baseUrl}/allUser`, async (req, res) => {
+    return res.json({
+        'data' : await User.find({})
+    })
+})
 app.get(baseUrl, (req, res) => {
-    res.json({
+    return res.json({
         'message' : "Welcome to Zinema API"
     })
-    return
 })
 
 
