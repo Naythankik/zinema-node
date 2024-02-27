@@ -2,7 +2,7 @@ const express = require('express')
 const bodyParser = require('body-parser')
 require('dotenv').config();
 const cookieParser = require('cookie-parser')
-const { auth } = require('./routes')
+const { auth, movie} = require('./routes')
 const database = require('./app/config/database')
 const cors = require('cors')
 const User = require('./app/model/User');
@@ -21,6 +21,7 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(`${baseUrl}/auth`, auth);
+app.use(`${baseUrl}/movie`, movie);
 
 
 app.get(`${baseUrl}/allUser`, async (req, res) => {

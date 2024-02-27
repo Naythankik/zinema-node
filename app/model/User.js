@@ -59,9 +59,8 @@ UserModel.pre("save", async function (next) {
 
   try {
     const salt = await bcrypt.genSalt(10);
-    
-    const hashedPassword = await bcrypt.hash(this.password, salt);
-    this.password = hashedPassword;
+
+  this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
     next(error);
@@ -69,8 +68,7 @@ UserModel.pre("save", async function (next) {
 });
 
 UserModel.methods.comparePassword = async function (candidatePassword) {
-  const isMatch = await bcrypt.compare(candidatePassword, this.password);
-  return isMatch;
+    return await bcrypt.compare(candidatePassword, this.password);
 };
 
 const User = mongoose.model("User", UserModel);

@@ -98,7 +98,7 @@ const login = async (req, res) => {
     { new: true }
   );
 
-  updateUser.password = updateUser.token = undefined
+  updateUser.password = undefined
 
   return successResponseWithData(res, updateUser, '');
 };
