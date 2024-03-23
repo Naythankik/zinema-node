@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 
 let configOptions = {
-    host: "sandbox.smtp.mailtrap.io",
+    host: process.env.MAIL_HOST,
     port: 2525,
     secure: false,
     auth: {
